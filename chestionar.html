@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chestionar Auto</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 60%;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .question-container {
+      margin-bottom: 20px;
+      padding: 20px;
+      border: 2px solid #4CAF50;
+      border-radius: 5px;
+      background-color: #e9f7e9;
+    }
+    .question {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+    .options {
+      list-style-type: none;
+      padding: 0;
+    }
+    .options li {
+      margin: 10px 0;
+      cursor: pointer;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: white;
+    }
+    .options li:hover {
+      background-color: #d4edda;
+    }
+    .next-btn {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    .next-btn:hover {
+      background-color: #45a049;
+    }
+    .score {
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Chestionar Auto</h1>
+    <div id="user-info"></div>
+    <div id="score" class="score">
+      <p>Răspunsuri corecte: <span id="correct-count">0</span> | Răspunsuri greșite: <span id="incorrect-count">0</span></p>
+    </div>
+    <div id="question-container" class="question-container">
+      <!-- Întrebările vor fi afișate aici -->
+    </div>
+    <button class="next-btn" onclick="nextQuestion()" disabled>Următoarea întrebare</button>
+  </div>
+
+  <script>
+    const firstName = localStorage.getItem('firstName');
+    const lastName = localStorage.getItem('lastName');
+    const cnp = localStorage.getItem('cnp');
+
+    let correctAnswers = 0;
+    let incorrectAnswers = 0;
+    let currentQuestionIndex = 0;
+    let selectedAnswer = null;
+
+    const allQuestions = [
+    { question: "Care este limita de viteză în localități?", options: ["50 km/h", "70 km/h", "90 km/h"], correct: "50 km/h", name: "q1" },
+    { question: "Ce semnifica indicatorul „Stop”?", options: ["Oprire obligatorie", "Reducere de viteză", "Acordare de prioritate"], correct: "Oprire obligatorie", name: "q2" },
+    { question: "Ce trebuie să faci la semnalul unui polițist?", options: ["Oprești imediat", "Îți continui deplasarea", "Reduci viteza"], correct: "Oprești imediat", name: "q3" },
+    { question: "Ce înseamnă un semafor pe galben intermitent?", options: ["Atenție, traversare permisă", "Oprire obligatorie", "Cedează trecerea"], correct: "Atenție, traversare permisă", name: "q4" },
+    { question: "În ce situație ai prioritate?", options: ["Dacă vii din dreapta", "Dacă ai indicatorul „Drum cu prioritate”", "În nicio situație"], correct: "Dacă ai indicatorul „Drum cu prioritate”", name: "q5" },
+    { question: "Care este viteza maximă pe autostradă?", options: ["100 km/h", "130 km/h", "150 km/h"], correct: "130 km/h", name: "q6" },
+    { question: "Ce culoare are un semafor care permite trecerea?", options: ["Roșu", "Galben", "Verde"], correct: "Verde", name: "q7" },
+    { question: "Când trebuie să folosești centura de siguranță?", options: ["Doar pe autostradă", "Doar în oraș", "Întotdeauna"], correct: "Întotdeauna", name: "q8" },
+    { question: "Ce semnifică indicatorul de „Drum îngustat”?", options: ["Drumul devine mai lat", "Drumul se îngustează", "Nu ai prioritate"], correct: "Drumul se îngustează", name: "q9" },
+    { question: "Care este limita de alcool admisă pentru șoferi?", options: ["0.0‰", "0.2‰", "0.5‰"], correct: "0.0‰", name: "q10" },
+    { question: "Ce semnifică indicatorul „Drum cu prioritate”?", options: ["Ai prioritate", "Trebuie să cedezi trecerea", "Drumul se îngustează"], correct: "Ai prioritate", name: "q11" },
+    { question: "Când este permisă depășirea pe linie discontinuă?", options: ["Oricând", "Doar dacă vizibilitatea este bună", "Niciodată"], correct: "Doar dacă vizibilitatea este bună", name: "q12" },
+    { question: "Ce culoare are un indicator rutier de avertizare?", options: ["Roșu", "Albastru", "Galben"], correct: "Galben", name: "q13" },
+    { question: "Ce trebuie să faci dacă ți se defectează mașina pe autostradă?", options: ["O lași pe loc", "O scoți pe banda de urgență și semnalizezi", "Chemi un prieten"], correct: "O scoți pe banda de urgență și semnalizezi", name: "q14" },
+    { question: "Ce obligație ai la un trecere de cale ferată fără bariere?", options: ["Să reduci viteza și să te asiguri", "Să oprești obligatoriu", "Să claxonezi"], correct: "Să reduci viteza și să te asiguri", name: "q15" },
+    { question: "În ce situație trebuie să folosești luminile de întâlnire pe timp de zi?", options: ["În tunel", "Pe autostradă", "În niciun caz"], correct: "În tunel", name: "q16" },
+    { question: "Când ai voie să folosești faza lungă?", options: ["Pe timp de noapte, dacă nu deranjezi alți participanți", "Oricând", "Niciodată"], correct: "Pe timp de noapte, dacă nu deranjezi alți participanți", name: "q17" },
+    { question: "Care este distanța minimă legală între două vehicule în mers?", options: ["1 metru", "Cel puțin distanța de frânare", "Nu există o regulă"], correct: "Cel puțin distanța de frânare", name: "q18" },
+    { question: "Ce înseamnă semnalul roșu intermitent la o trecere de cale ferată?", options: ["Treci cu grijă", "Oprești", "Accelerezi"], correct: "Oprești", name: "q19" },
+    { question: "Când ai voie să parchezi pe trotuar?", options: ["Dacă există un indicator care permite", "Oricând", "Niciodată"], correct: "Dacă există un indicator care permite", name: "q20" },
+    { question: "Cum trebuie să te comporți într-o intersecție nesemnalizată?", options: ["Acord prioritate de dreapta", "Treci primul", "Reduci viteza și continui"], correct: "Acord prioritate de dreapta", name: "q21" },
+    { question: "Când este interzisă întoarcerea vehiculului?", options: ["În intersecții", "Pe autostradă", "Pe poduri și treceri de pietoni"], correct: "Pe poduri și treceri de pietoni", name: "q22" },
+    { question: "Ce trebuie să faci dacă vezi un vehicul de urgență cu semnale sonore și luminoase?", options: ["Opresc", "Mă dau la o parte", "Ignor"], correct: "Mă dau la o parte", name: "q23" },
+    { question: "Ce indicație oferă un indicator rutier în formă de cerc roșu cu o linie albă în mijloc?", options: ["Interzis", "Drum cu prioritate", "Cedează trecerea"], correct: "Interzis", name: "q24" },
+    { question: "Ce trebuie să faci înainte de a pleca la drum pe timp de iarnă?", options: ["Verifici frânele și presiunea în cauciucuri", "Nu faci nimic", "Îți iei o lopată"], correct: "Verifici frânele și presiunea în cauciucuri", name: "q25" },
+    { question: "Care este limita legală de viteză în afara localităților?", options: ["90 km/h", "100 km/h", "130 km/h"], correct: "90 km/h", name: "q26" },
+    { question: "Ce trebuie să faci dacă ți se aprinde un martor luminos roșu în bord?", options: ["Continui drumul", "Oprești imediat", "Reduci viteza"], correct: "Oprești imediat", name: "q27" },
+    { question: "Ce faci dacă vezi un indicator de „Drum îngustat”?", options: ["Reduci viteza", "Accelerezi", "Claxonezi"], correct: "Reduci viteza", name: "q28" },
+    { question: "Ce trebuie să faci dacă întâlnești un biciclist pe drum?", options: ["Îl depășești cu atenție", "Claxonezi", "Îl ignori"], correct: "Îl depășești cu atenție", name: "q29" },
+    { question: "Când ai voie să oprești pe partea carosabilă?", options: ["Dacă este permis prin indicator", "Oricând", "Niciodată"], correct: "Dacă este permis prin indicator", name: "q30" },
+    { question: "Cum trebuie să semnalizezi schimbarea direcției de mers?", options: ["Prin folosirea semnalizatoarelor", "Prin claxon", "Nu este necesar"], correct: "Prin folosirea semnalizatoarelor", name: "q31" },
+    { question: "Care este prima măsură pe care trebuie să o iei în caz de accident?", options: ["Să oprești și să asiguri zona", "Să fugi", "Să suni un prieten"], correct: "Să oprești și să asiguri zona", name: "q32" },
+    { question: "Ce trebuie să faci dacă te întâlnești cu un drum cu prioritate?", options: ["Acord prioritate", "Treci primul", "Claxonezi"], correct: "Acord prioritate", name: "q33" },
+    { question: "Cum trebuie să procedezi când te apropii de o intersecție cu semafor galben intermitent?", options: ["Continui fără oprire", "Acord prioritate", "Accelerezi"], correct: "Acord prioritate", name: "q34" },
+    { question: "Care este limita maximă de viteză într-o zonă rezidențială?", options: ["30 km/h", "50 km/h", "70 km/h"], correct: "30 km/h", name: "q35" },
+    { question: "Cine are prioritate într-o intersecție nesemnalizată?", options: ["Vehiculul care circulă cu viteză mai mare", "Vehiculul care vine din dreapta", "Vehiculul mai mare"], correct: "Vehiculul care vine din dreapta", name: "q36" },
+    { question: "Ce trebuie să faci când ajungi la o intersecție cu sens giratoriu?", options: ["Cedezi trecerea vehiculelor din interior", "Treci primul", "Opresc complet"], correct: "Cedezi trecerea vehiculelor din interior", name: "q37" },
+    { question: "Ce viteză maximă este permisă în zona unei școli?", options: ["50 km/h", "30 km/h", "70 km/h"], correct: "30 km/h", name: "q38" },
+    { question: "Ce trebuie să faci la un semnal de oprire al polițistului?", options: ["Oprești imediat", "Ignori semnalul", "Reduci viteza și continui"], correct: "Oprești imediat", name: "q39" },
+    { question: "Cum trebuie să procedezi într-un tunel cu trafic intens?", options: ["Măresc viteza", "Mențin distanța și folosesc luminile de întâlnire", "Opresc"], correct: "Mențin distanța și folosesc luminile de întâlnire", name: "q40" },
+    { question: "Ce semnifică un indicator cu un cerc roșu și o săgeată în jos?", options: ["Obligatoriu înainte", "Acces interzis", "Drum închis"], correct: "Acces interzis", name: "q41" },
+    { question: "Cum semnalizezi schimbarea benzii?", options: ["Doar uitându-te în oglindă", "Semnalizezi din timp și verifici oglinzile", "Nu este necesar"], correct: "Semnalizezi din timp și verifici oglinzile", name: "q42" },
+    { question: "Ce indicație oferă un semafor verde intermitent?", options: ["Semaforul urmează să se schimbe pe galben", "Ai prioritate absolută", "Trebuie să oprești imediat"], correct: "Semaforul urmează să se schimbe pe galben", name: "q43" },
+    { question: "Ce trebuie să faci dacă vezi un indicator „Cedează trecerea”?", options: ["Reduci viteza și cedezi trecerea", "Treci fără să oprești", "Opresc complet"], correct: "Reduci viteza și cedezi trecerea", name: "q44" },
+    { question: "Cum recunoști un indicator de avertizare?", options: ["Are formă de triunghi și fundal galben", "Are fundal albastru", "Este rotund"], correct: "Are formă de triunghi și fundal galben", name: "q45" },
+    { question: "Ce trebuie să faci înainte de o frânare bruscă?", options: ["Apăs frâna brusc", "Verific oglinda retrovizoare", "Claxonez"], correct: "Verific oglinda retrovizoare", name: "q46" },
+    { question: "Cum procedezi dacă se apropie o ambulanță cu semnale acustice și luminoase?", options: ["Continui normal", "Îți faci loc cât mai rapid", "Oprești în mijlocul drumului"], correct: "Îți faci loc cât mai rapid", name: "q47" },
+    { question: "Ce faci dacă circuli pe un drum acoperit cu gheață?", options: ["Măresc viteza", "Folosesc frâna de motor și reduc viteza", "Folosesc doar frâna"], correct: "Folosesc frâna de motor și reduc viteza", name: "q48" },
+    { question: "Cum trebuie să reacționezi dacă îți explodează un cauciuc în mers?", options: ["Ții ferm volanul și reduci treptat viteza", "Tragi brusc de volan", "Apăs frâna la maximum"], correct: "Ții ferm volanul și reduci treptat viteza", name: "q49" },
+    { question: "Ce distanță minimă trebuie să păstrezi față de un camion în mers?", options: ["10 metri", "Distanța de frânare necesară", "Nu contează"], correct: "Distanța de frânare necesară", name: "q50" },
+    { question: "Ce trebuie să faci dacă vezi un accident cu victime?", options: ["Oprești și acorzi primul ajutor", "Îți continui drumul", "Suni doar poliția"], correct: "Oprești și acorzi primul ajutor", name: "q51" },
+    { question: "Care este poziția corectă pentru o victimă inconștientă?", options: ["Culcată pe spate", "În poziția laterală de siguranță", "Ridicată în șezut"], correct: "În poziția laterală de siguranță", name: "q52" },
+    { question: "Cum oprești o hemoragie puternică?", options: ["Aplici un garou", "Pui un pansament compresiv", "O lași să sângereze"], correct: "Pui un pansament compresiv", name: "q53" },
+    { question: "Ce trebuie să faci dacă un pieton este lovit pe trecerea de pietoni?", options: ["Să părăsești locul accidentului", "Să suni la 112 și să acorzi primul ajutor", "Să muți victima"], correct: "Să suni la 112 și să acorzi primul ajutor", name: "q54" },
+    { question: "Cum acorzi primul ajutor unei victime care nu respiră?", options: ["Începi compresiile toracice și ventilația artificială", "O lași întinsă", "Îi dai apă"], correct: "Începi compresiile toracice și ventilația artificială", name: "q55" },
+    { question: "Când ai voie să circuli pe banda de mijloc a unui drum cu trei benzi pe sens?", options: ["Doar pentru depășire", "Oricând", "Dacă banda din dreapta este ocupată"], correct: "Dacă banda din dreapta este ocupată", name: "q56" },
+    { question: "Care este limita maximă de viteză în afara localităților pe un drum expres?", options: ["90 km/h", "100 km/h", "120 km/h"], correct: "120 km/h", name: "q57" },
+    { question: "Ce trebuie să faci la o trecere de pietoni nesemaforizată?", options: ["Reduci viteza și acorzi prioritate pietonilor", "Claxonezi pentru a avertiza pietonii", "Treci fără să oprești"], correct: "Reduci viteza și acorzi prioritate pietonilor", name: "q58" },
+    { question: "Cum trebuie să reacționezi dacă vezi un copil pe marginea drumului?", options: ["Reduci viteza și ești pregătit să oprești", "Claxonezi", "Continui fără modificări"], correct: "Reduci viteza și ești pregătit să oprești", name: "q59" },
+    { question: "În ce situație ai voie să folosești luminile de avarie în mers?", options: ["În caz de pericol iminent", "Oricând", "Niciodată"], correct: "În caz de pericol iminent", name: "q60" },
+    { question: "Ce trebuie să faci dacă vezi indicatorul 'Cedează trecerea'?", options: ["Oprești complet", "Reduci viteza și acorzi prioritate", "Treci fără să oprești"], correct: "Reduci viteza și acorzi prioritate", name: "q61" },
+    { question: "Ce trebuie să faci dacă un semafor este defect?", options: ["Respecti semnele de prioritate", "Treci fără oprire", "Acorzi prioritate tuturor"], correct: "Respecti semnele de prioritate", name: "q62" },
+    { question: "Ce indicație oferă un indicator cu un triunghi roșu și un simbol de îngustare a drumului?", options: ["Drum cu prioritate", "Drum îngustat", "Drum închis"], correct: "Drum îngustat", name: "q63" },
+    { question: "Cum trebuie să reacționezi la luminile albastre intermitente ale unei mașini de poliție?", options: ["Continui drumul normal", "Încetinești și te asiguri", "Faci loc și te oprești dacă e necesar"], correct: "Faci loc și te oprești dacă e necesar", name: "q64" },
+    { question: "În ce situație ai voie să folosești claxonul în localitate?", options: ["Pentru a semnaliza un pericol iminent", "Oricând", "Doar la trecerile de pietoni"], correct: "Pentru a semnaliza un pericol iminent", name: "q65" },
+    { question: "Cum trebuie să semnalizezi schimbarea benzii de circulație?", options: ["Doar privind în oglindă", "Semnalizezi din timp și te asiguri", "Nu este necesar"], correct: "Semnalizezi din timp și te asiguri", name: "q66" },
+    { question: "Ce trebuie să faci dacă rămâi fără frâne în mers?", options: ["Folosesc frâna de motor și trag pe dreapta", "Accelerez pentru a scăpa de pericol", "Oprirea nu este posibilă"], correct: "Folosesc frâna de motor și trag pe dreapta", name: "q67" },
+    { question: "Ce faci dacă vezi un autobuz școlar cu luminile de avarie aprinse?", options: ["Reduci viteza și fii pregătit să oprești", "Îl depășești rapid", "Ignori"], correct: "Reduci viteza și fii pregătit să oprești", name: "q68" },
+    { question: "Cum procedezi dacă întâlnești un drum acoperit cu pietriș?", options: ["Măresc viteza", "Mențin viteza constantă", "Reduc viteza pentru a evita derapajul"], correct: "Reduc viteza pentru a evita derapajul", name: "q69" },
+    { question: "Cât trebuie să păstrezi distanță față de vehiculul din față în condiții de ploaie?", options: ["Distanța normală", "Dublu față de distanța normală", "Nu contează"], correct: "Dublu față de distanța normală", name: "q70" },
+    { question: "Ce faci dacă observi un animal pe carosabil?", options: ["Reduci viteza și eviți brusc", "Frânezi progresiv și încerci să-l eviți în siguranță", "Accelerezi"], correct: "Frânezi progresiv și încerci să-l eviți în siguranță", name: "q71" },
+    { question: "Cum procedezi dacă vezi un vehicul care circulă pe contrasens pe autostradă?", options: ["Îl claxonezi", "Îți reduci viteza și semnalizezi pericolul", "Ignori"], correct: "Îți reduci viteza și semnalizezi pericolul", name: "q72" },
+    { question: "Ce faci dacă ești orbit de farurile unei mașini din sens opus noaptea?", options: ["Te uiți spre marginea dreaptă a drumului", "Claxonezi", "Închizi ochii"], correct: "Te uiți spre marginea dreaptă a drumului", name: "q73" },
+    { question: "Când este permisă folosirea fazei lungi pe timp de noapte?", options: ["Doar în afara localității, dacă nu sunt alte vehicule", "Oricând", "Niciodată"], correct: "Doar în afara localității, dacă nu sunt alte vehicule", name: "q74" },
+    { question: "Ce trebuie să faci dacă întâlnești o coloană de mașini în spatele unei ambulanțe?", options: ["Ocolești coloana", "Rămâi pe loc și nu blochezi ambulanța", "Claxonezi pentru a avansa"], correct: "Rămâi pe loc și nu blochezi ambulanța", name: "q75" },
+    { question: "Care este limita maximă de alcoolemie permisă la volan în România?", options: ["0,00‰", "0,20‰", "0,50‰"], correct: "0,00‰", name: "q76" },
+    { question: "Ce faci dacă simți oboseală la volan?", options: ["Continui să conduci", "Tragi pe dreapta și iei o pauză", "Crești viteza"], correct: "Tragi pe dreapta și iei o pauză", name: "q77" },
+    { question: "Ce faci dacă ai un accident minor fără victime?", options: ["Mergi direct la poliție", "Completezi un formular de constatare amiabilă", "Părăsești locul accidentului"], correct: "Completezi un formular de constatare amiabilă", name: "q78" },
+    { question: "Ce este permis pe banda de urgență a autostrăzii?", options: ["Doar opriri în caz de urgență", "Depășiri", "Staționare"], correct: "Doar opriri în caz de urgență", name: "q79" },
+    { question: "Ce faci dacă un polițist îți face semn să oprești?", options: ["Oprești imediat", "Ignori", "Accelerezi"], correct: "Oprești imediat", name: "q80" },
+    { question: "Ce trebuie să faci dacă un semafor arată simultan roșu și galben?", options: ["Treci cu atenție", "Oprești și aștepți verdele", "Continui fără oprire"], correct: "Oprești și aștepți verdele", name: "q81" },
+    { question: "Când ai voie să depășești o coloană de vehicule?", options: ["Doar dacă nu sunt alte vehicule în față", "Când este permis de marcajele rutiere și semne", "Oricând"], correct: "Când este permis de marcajele rutiere și semne", name: "q82" },
+    { question: "Cum trebuie să circuli în sensul giratoriu?", options: ["Cu prioritate față de cei care intră", "Cu prioritate față de cei din sens", "În funcție de viteza celorlalte mașini"], correct: "Cu prioritate față de cei care intră", name: "q83" },
+    { question: "Ce faci dacă pneul din față se sparge în mers?", options: ["Frânezi brusc", "Ții volanul ferm și reduci viteza treptat", "Opresc imediat fără control"], correct: "Ții volanul ferm și reduci viteza treptat", name: "q84" },
+    { question: "Cum recunoști un drum cu prioritate?", options: ["Indicator de prioritate", "Lipsa oricăror semne", "Semafor intermitent"], correct: "Indicator de prioritate", name: "q85" },
+    { question: "Ce trebuie să faci dacă ești implicat într-un accident cu victime?", options: ["Părăsești locul accidentului", "Suni imediat la 112 și acorzi primul ajutor", "Continui drumul"], correct: "Suni imediat la 112 și acorzi primul ajutor", name: "q86" },
+    { question: "Care este semnalul corect pentru a vira la dreapta?", options: ["Folosirea semnalizării din timp", "Claxon", "Niciun semnal"], correct: "Folosirea semnalizării din timp", name: "q87" },
+    { question: "Ce înseamnă un indicator cu o săgeată în jos pe un fundal albastru?", options: ["Sens unic", "Obligatoriu înainte", "Punct de oprire"], correct: "Obligatoriu înainte", name: "q88" },
+    { question: "Cum trebuie să reacționezi la o intersecție fără semne de circulație?", options: ["Prioritate de dreapta", "Prioritate de stânga", "Treci fără oprire"], correct: "Prioritate de dreapta", name: "q89" },
+    { question: "În ce situație este permisă folosirea telefonului mobil la volan?", options: ["Dacă este folosit cu hands-free", "Oricând", "Niciodată"], correct: "Dacă este folosit cu hands-free", name: "q90" },
+    { question: "Ce trebuie să faci dacă vezi un pieton pe carosabil în afara unei treceri semnalizate?", options: ["Ignori", "Încetinești și acorzi prioritate dacă este necesar", "Claxonezi pentru a-l atenționa"], correct: "Încetinești și acorzi prioritate dacă este necesar", name: "q91" },
+    { question: "Când este interzisă staționarea unui vehicul pe drumurile publice?", options: ["Doar noaptea", "Când încurcă circulația", "Oricând"], correct: "Când încurcă circulația", name: "q92" },
+    { question: "Care este distanța minimă față de trecerea de pietoni unde ai voie să parchezi?", options: ["5 metri", "10 metri", "15 metri"], correct: "5 metri", name: "q93" },
+    { question: "Ce trebuie să faci înainte de a pleca de pe loc cu mașina?", options: ["Verifici oglinzile și semnalizezi", "Claxonezi", "Plec fără verificări"], correct: "Verifici oglinzile și semnalizezi", name: "q94" },
+    { question: "Cum trebuie să reacționezi dacă rămâi blocat pe o trecere la calea ferată?", options: ["Încerci să împingi mașina", "Părăsești imediat vehiculul și suni la 112", "Aștepți"], correct: "Părăsești imediat vehiculul și suni la 112", name: "q95" },
+    { question: "Când trebuie să schimbi anvelopele de vară cu cele de iarnă?", options: ["Când temperatura scade sub 7°C", "Oricând", "Doar dacă ninge"], correct: "Când temperatura scade sub 7°C", name: "q96" },
+    { question: "Care este viteza maximă admisă în zona unei școli?", options: ["30 km/h", "50 km/h", "70 km/h"], correct: "30 km/h", name: "q97" },
+    { question: "Ce trebuie să faci dacă vezi un semn cu un 'X' roșu pe un fond albastru?", options: ["Parcarea interzisă", "Obligatoriu înainte", "Depășirea interzisă"], correct: "Parcarea interzisă", name: "q98" },
+    { question: "Ce trebuie să faci dacă motorul mașinii se oprește în trafic?", options: ["Încerci să repornești rapid și semnalizezi", "Aștepți fără să iei măsuri", "Părăsești imediat vehiculul"], correct: "Încerci să repornești rapid și semnalizezi", name: "q99" },
+    { question: "Ce faci dacă te apropii de o intersecție și semaforul este roșu, dar există o mașină de intervenție care te depășește?", options: ["Te oprești și lași trecerea mașinii de intervenție", "Continui pentru că semaforul este roșu", "Claxonezi pentru a avertiza mașina de intervenție"], correct: "Te oprești și lași trecerea mașinii de intervenție", name: "q100" }
+  ];
+
+
+    let questions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 11);
+
+    let timeLeft = 1800; // 30 minute (1800 secunde)
+
+    function startTimer() {
+      const timerDisplay = document.createElement("p");
+      timerDisplay.id = "timer";
+      timerDisplay.style.fontSize = "18px";
+      timerDisplay.style.fontWeight = "bold";
+      document.querySelector(".container").prepend(timerDisplay);
+
+     const timerInterval = setInterval(() => {
+        let minutes = Math.floor(timeLeft / 60);
+        let seconds = timeLeft % 60;
+        timerDisplay.textContent = `Timp rămas: ${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          alert("Timpul a expirat! Chestionarul s-a încheiat.");
+          document.body.innerHTML = "<h1 style='text-align:center;'>Chestionarul s-a încheiat!</h1>";
+        }
+
+        timeLeft--;
+      }, 1000);
+    }
+
+  startTimer();
+
+    function displayQuestion() {
+      const question = questions[currentQuestionIndex];
+      const questionContainer = document.getElementById('question-container');
+      document.querySelector(".next-btn").disabled = true;
+      selectedAnswer = null;
+
+      questionContainer.innerHTML = `
+        <div class="question">${question.question}</div>
+        <ul class="options">
+          ${question.options.map(option => `<li onclick="selectAnswer(this, '${option}')">${option}</li>`).join('')}
+        </ul>
+      `;
+    }
+    function selectAnswer(element, option) {
+    // Elimină selecția anterioară
+   document.querySelectorAll(".options li").forEach(li => {
+      li.style.backgroundColor = ""; // Resetare stil
+    });
+
+  // Marchez noua selecție
+    selectedAnswer = option;
+    element.style.backgroundColor = "#D3D3D3"; // Gri pentru răspuns selectat
+    document.querySelector(".next-btn").disabled = false;
+}
+  function nextQuestion() {
+    if (!selectedAnswer) return;
+
+    const question = questions[currentQuestionIndex];
+
+    if (selectedAnswer === question.correct) {
+      correctAnswers++;
+    } else {
+      incorrectAnswers++;
+  }
+
+  // Actualizăm numărul de răspunsuri corecte și greșite (afișate sus)
+  document.getElementById('correct-count').textContent = correctAnswers;
+  document.getElementById('incorrect-count').textContent = incorrectAnswers;
+
+  // Resetare selecție pentru următoarea întrebare
+  selectedAnswer = null;
+  document.querySelector(".next-btn").disabled = true;
+
+  // Trecem la următoarea întrebare după 1 secundă
+    setTimeout(() => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions.length) {
+        displayQuestion();
+      } else {
+        // Verificăm rezultatul final
+        if (correctAnswers >= 9) {
+          document.body.innerHTML = "<h1 style='text-align:center; color:green;'>Felicitări! Ai fost admis la proba teoretica.</h1>";
+        } else {
+          document.body.innerHTML = "<h1 style='text-align:center; color:red;'>Respins!</h1>";
+        }
+      }
+    }, 1000);
+  }
+
+  displayQuestion();
+  
+  </script>
+</body>
+</html>
